@@ -5,8 +5,11 @@ Computer Systems Architecture Course
 Assignment 1
 March 2021
 """
-from queue import Queue
+import copy
+import threading
 from threading import Lock
+
+from tema.ProductWrapper import ProductWrapper
 
 
 class Marketplace:
@@ -23,12 +26,15 @@ class Marketplace:
         """
         self.queue_max_size_per_producer = queue_size_per_producer
 
-        self.carts = {} # {cart_id, list(products)}
-        self.producers = {} # {producer_id, products_queue}
+        self.carts = {} # {cart_id, list(ProductWrapper)}
+        self.producers = {} # {producer_id, [products]}
         self.consumers = {} # {consumer_id, [carts]}
         self.carts_counter = 0
 
         self.reg_prod_lock = Lock()
+        self.cart_lock = Lock()
+        self.producers_lock = Lock()
+
 
     def register_producer(self):
         """
@@ -38,8 +44,8 @@ class Marketplace:
         # Sync with a lock because length of the dict can be change by another prod
         with self.reg_prod_lock:
             prod_id = len(self.producers)
-        # Init the queue for the caller producer
-        self.producers[prod_id] = Queue(maxsize=self.queue_max_size_per_producer)
+        # Init the list for the caller producer
+        self.producers[prod_id] = list()
         return prod_id
 
 
@@ -55,10 +61,10 @@ class Marketplace:
 
         :returns True or False. If the caller receives False, it should wait and then try again.
         """
-
-        if self.producers[producer_id].qsize() < self.queue_max_size_per_producer:
-            print(self.producers[producer_id].qsize())
-            self.producers[producer_id].put(product)
+        # Check if producer's list is full
+        if len(self.producers[producer_id]) < self.queue_max_size_per_producer:
+            # Add the product in the producer's list
+            self.producers[producer_id].append(product)
             return True
         else:
             return False
@@ -70,10 +76,11 @@ class Marketplace:
 
         :returns an int representing the cart_id
         """
-        # Update carts number
-        self.carts_counter += 1
 
-        cart_id = self.carts_counter
+        # Update carts number
+        with self.cart_lock:
+            cart_id = self.carts_counter
+            self.carts_counter += 1
 
         # Add cart_id into cart dictionary
         self.carts[cart_id] = list()
@@ -92,7 +99,19 @@ class Marketplace:
 
         :returns True or False. If the caller receives False, it should wait and then try again
         """
-        pass
+        producers_copy = copy.deepcopy(self.producers)
+        # Iterate through every producer
+        for (producer_id, products) in producers_copy.items():
+            # Iterate through every producer's list
+            if product in products:
+                product_wrapper = ProductWrapper(product, producer_id)
+                self.carts[cart_id].append(product_wrapper)
+                self.producers[producer_id].remove(product)
+                #print(threading.current_thread().name + " bought " + str(product) + " in cart " + str(cart_id))
+                return True
+            return False
+
+
 
     def remove_from_cart(self, cart_id, product):
         """
@@ -104,7 +123,21 @@ class Marketplace:
         :type product: Product
         :param product: the product to remove from cart
         """
-        pass
+        for cart_product in self.carts[cart_id]:
+            if cart_product.name == product:
+                # Find product's producer so that I know where to put it back
+                prod_id = cart_product.producer_id
+                removed_prod = cart_product
+                break;
+
+        self.carts[cart_id].remove(removed_prod)
+        #print(threading.current_thread().name + " removed " + str(product)+ " from cart " + str(cart_id))
+        self.producers[prod_id].append(product)
+
+
+
+
+
 
     def place_order(self, cart_id):
         """
@@ -113,4 +146,11 @@ class Marketplace:
         :type cart_id: Int
         :param cart_id: id cart
         """
-        pass
+        #print(threading.current_thread().name + " " + str(len(self.carts)))
+        for product in self.carts[cart_id]:
+            print(threading.current_thread().name + " bought " + str(product.name))
+
+
+        cart = [product.name for product in self.carts[cart_id]]
+        return cart
+

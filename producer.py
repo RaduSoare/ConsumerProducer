@@ -9,6 +9,8 @@ import threading
 from threading import Thread, Event
 from time import sleep
 
+from tema.ProductWrapper import ProductWrapper
+
 
 class Producer(Thread):
     """
@@ -42,7 +44,7 @@ class Producer(Thread):
 
 
     def run(self):
-      # while True:
+       while True:
         for product_data in self.products:
             # split products data
             product_name = product_data[0]
@@ -57,7 +59,3 @@ class Producer(Thread):
                 else:
                     products_published += 1
                     sleep(publish_wait)
-
-
-
-
