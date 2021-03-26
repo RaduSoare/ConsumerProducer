@@ -99,16 +99,16 @@ class Marketplace:
 
         :returns True or False. If the caller receives False, it should wait and then try again
         """
-        producers_copy = copy.deepcopy(self.producers)
-        # Iterate through every producer
-        for (producer_id, products) in producers_copy.items():
-            # Iterate through every producer's list
-            if product in products:
-                product_wrapper = ProductWrapper(product, producer_id)
-                self.carts[cart_id].append(product_wrapper)
-                self.producers[producer_id].remove(product)
-                #print(threading.current_thread().name + " bought " + str(product) + " in cart " + str(cart_id))
-                return True
+        with self.producers_lock:
+            producers_copy = copy.deepcopy(self.producers)
+            # Iterate through every producer
+            for (producer_id, products) in producers_copy.items():
+                # Iterate through every producer's list
+                if product in products:
+                    product_wrapper = ProductWrapper(product, producer_id)
+                    self.carts[cart_id].append(product_wrapper)
+                    self.producers[producer_id].remove(product)
+                    return True
             return False
 
 
@@ -123,15 +123,16 @@ class Marketplace:
         :type product: Product
         :param product: the product to remove from cart
         """
-        for cart_product in self.carts[cart_id]:
-            if cart_product.name == product:
-                # Find product's producer so that I know where to put it back
-                prod_id = cart_product.producer_id
-                removed_prod = cart_product
-                break;
+        with self.cart_lock:
+            for cart_product in self.carts[cart_id]:
+                if cart_product.name == product:
+                    # Find product's producer so that I know where to put it back
+                    prod_id = cart_product.producer_id
+                    removed_prod = cart_product
+                    break;
 
-        self.carts[cart_id].remove(removed_prod)
-        #print(threading.current_thread().name + " removed " + str(product)+ " from cart " + str(cart_id))
+            self.carts[cart_id].remove(removed_prod)
+
         self.producers[prod_id].append(product)
 
 
@@ -146,10 +147,8 @@ class Marketplace:
         :type cart_id: Int
         :param cart_id: id cart
         """
-        #print(threading.current_thread().name + " " + str(len(self.carts)))
         for product in self.carts[cart_id]:
             print(threading.current_thread().name + " bought " + str(product.name))
-
 
         cart = [product.name for product in self.carts[cart_id]]
         return cart

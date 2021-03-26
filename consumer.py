@@ -64,11 +64,10 @@ class Consumer(Thread):
                     products_removed = 0
                     while products_removed < quantity_to_be_removed:
                         self.marketplace.remove_from_cart(cart_id, operation[constants.PRODUCT])
-
                         products_removed += 1
             # Place the order after filling the carts
             self.marketplace.place_order(cart_id)
-           # print(str(cart_id) + " " + threading.current_thread().name + " " + str(len(self.marketplace.carts[cart_id])))
+
 
 
 
