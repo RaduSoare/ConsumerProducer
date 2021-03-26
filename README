@@ -1,0 +1,38 @@
+===============================================================================
+        Soare Radu-Georgian
+        336CB
+        Tema1 ASC
+===============================================================================
+
+~ Abordare generala ~
+
+* Producator:
+ Intr-o bucla infinita parcurge lista de produse pe care le poate produce
+si le publica intr-o lista proprie cat timp este spatiu in aceasta. Cand
+lista s-a umplut, se asteapta o perioada de timp dupa care se reincearca.
+ Fiecare producator primeste un id corespunzator cu lungimea actuala
+a listei de producatori(s-a folosit aceeasi abordare si pentru id-ul
+cart-urilor).
+
+* Consumator:
+ Trece prin fiecare "lista de cumparaturi" -> cart si adauga in propriul cart
+produsele pe masura ce acestea sunt disponibile. Daca doreste un produs ce
+nu se afla in lista niciunui producator, se incearca intr-o bucla pana cand
+produsul devine disponibil.
+Pentru a marca faptul ca produsul nu mai poate fi adaugat in cos de alt
+consumator, acesta este sters din lista producatorului, dar se retine id-ul
+acestuia pentru ca la remove_from_cart sa devina disponibil in aceeasi lista
+din care a fost extras initial.
+ Dupa ce fiecare consumator si-a adaugat tot ce avea nevoie, se afiseaza
+lista produselor ramase in cos.
+
+* Obiecte folosite:
+- Am ales sa pastrez obiectele organizate in dictionare pentru a gasi in timp
+constant lista unui producator stiind id-ul acestuia sau produsele din cosul
+unui consumator stiind id-ul cosului.
+- Am ales sa sincronizez accesul la date cu 2 Lock-uri, unul pentru
+operatiile pe cart-uri si unul pentru operatiile pe producatori.
+
+Link Github: https://github.com/RaduSoare/Tema1ASC
+
+
